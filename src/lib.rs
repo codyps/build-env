@@ -1,13 +1,14 @@
 use std::env;
 use std::ffi::{OsStr,OsString};
 use std::borrow::ToOwned;
+use std::{error,fmt,any};
 
 /**
  * Allow retrieval of values pretaining to a `build` process that may be related to the `target`
  * and/or `host` triple.
  *
  */
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct BuildEnv {
     /*
      * restricted to String due to our use of String::replace
@@ -17,17 +18,36 @@ pub struct BuildEnv {
 }
 
 /// If variable retrieval fails, it will be for one of these reasons
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum VarErrorKind {
     NotFound,
     NotString(OsString),
 }
 
 /// Describes a variable retrieval failure
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct VarError<K: AsRef<OsStr>> {
     key: K,
     kind: VarErrorKind
+}
+
+impl<K: AsRef<OsStr>> fmt::Display for VarError<K> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self.kind {
+            VarErrorKind::NotFound => write!(fmt, "Variable {:?} was not found", self.key.as_ref()),
+            VarErrorKind::NotString(ref x) => write!(fmt, "Variable {:?} was found, but is not utf-8: {:?}",
+                                                     self.key.as_ref(), x)
+        }
+    }
+}
+
+impl<K: AsRef<OsStr> + fmt::Debug + 'static + any::Any> error::Error for VarError<K> {
+    fn description(&self) -> &str {
+        match self.kind {
+            VarErrorKind::NotFound => "not found",
+            VarErrorKind::NotString(_) => "found but not utf-8",
+        }
+    }
 }
 
 impl BuildEnv {
@@ -117,7 +137,7 @@ impl BuildEnv {
      * The same as Self::var(), but converts the return to an OsString and provides a useful error
      * message
      */
-    pub fn var_str<K: AsRef<OsStr>>(&self, var_base: K) -> Result<String, VarError<K>>
+    pub fn var_str<K: AsRef<OsStr> + fmt::Debug + 'static + any::Any>(&self, var_base: K) -> Result<String, VarError<K>>
     {
         match self.var(&var_base) {
             Some(v) => v.into_string().map_err(|o| VarError { key: var_base, kind: VarErrorKind::NotString(o)}),
