@@ -41,7 +41,7 @@ impl<K: AsRef<OsStr>> fmt::Display for VarError<K> {
     }
 }
 
-impl<K: AsRef<OsStr> + fmt::Debug + 'static + any::Any> error::Error for VarError<K> {
+impl<K: AsRef<OsStr> + fmt::Debug + any::Any> error::Error for VarError<K> {
     fn description(&self) -> &str {
         match self.kind {
             VarErrorKind::NotFound => "not found",
@@ -137,7 +137,7 @@ impl BuildEnv {
      * The same as Self::var(), but converts the return to an OsString and provides a useful error
      * message
      */
-    pub fn var_str<K: AsRef<OsStr> + fmt::Debug + 'static + any::Any>(&self, var_base: K) -> Result<String, VarError<K>>
+    pub fn var_str<K: AsRef<OsStr> + fmt::Debug + any::Any>(&self, var_base: K) -> Result<String, VarError<K>>
     {
         match self.var(&var_base) {
             Some(v) => v.into_string().map_err(|o| VarError { key: var_base, kind: VarErrorKind::NotString(o)}),
@@ -155,6 +155,7 @@ mod tests {
             env::remove_var(&format!("HOST_{}", v));
             env::remove_var(&format!("TARGET_{}", v));
             env::remove_var(&format!("{}_{}", trip, v));
+            env::remove_var(&format!("{}_{}", trip.replace("-","_"), v));
             env::remove_var(v);
         }
     }
@@ -165,6 +166,18 @@ mod tests {
         let cc = "a-cc-value";
         clear(t, &["CC"]);
         env::set_var("CC", cc);
+
+        let b = BuildEnv::new(t.to_owned());
+
+        assert_eq!(b.var_str("CC").unwrap(), cc);
+    }
+
+    #[test]
+    fn exact_target() {
+        let t = "this-is-a-target";
+        let cc = "a-cc-value";
+        clear(t, &["CC"]);
+        env::set_var(format!("CC_{}", t), cc);
 
         let b = BuildEnv::new(t.to_owned());
 
