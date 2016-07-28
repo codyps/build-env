@@ -177,9 +177,44 @@ mod tests {
         let t = "this-is-a-target";
         let cc = "a-cc-value";
         clear(t, &["CC"]);
+
+        env::set_var("CC", "notThis");
+        env::set_var("HOST_CC", "not-this");
         env::set_var(format!("CC_{}", t), cc);
 
         let b = BuildEnv::new(t.to_owned());
+
+        assert_eq!(b.var_str("CC").unwrap(), cc);
+    }
+
+    #[test]
+    fn v_host() {
+        let t = "this-is-a-target";
+        let cc = "a-cc-value";
+        clear(t, &["CC"]);
+
+        env::set_var("CC", "not-this-value");
+        env::set_var("HOST_CC", cc);
+
+        let b = BuildEnv::new(t.to_owned());
+
+        assert_eq!(b.var_str("CC").unwrap(), cc);
+    }
+
+    #[test]
+    fn v_target() {
+        let t = "this-is-a-target";
+        let t2 = "some-target";
+        let cc = "a-cc-value";
+        clear(t, &["CC"]);
+        clear(t2, &["CC"]);
+
+        env::set_var("CC", "not-this-value");
+        env::set_var("HOST_CC", "not this!");
+        env::set_var("TARGET_CC", cc);
+        env::set_var(format!("CC_{}", t), "not this either");
+
+        let b = BuildEnv::new_cross(t.to_owned(), t2.to_owned());
 
         assert_eq!(b.var_str("CC").unwrap(), cc);
     }
