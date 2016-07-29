@@ -2,5 +2,8 @@
 name = "build-env"
 version = "0.0.1"
 authors = ["Cody P Schafer <dev@codyps.com>"]
+description = "Extract information about the build process from the environment"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/jmesmon/build-env"
 
 [dependencies]
