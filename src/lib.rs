@@ -150,6 +150,7 @@ impl BuildEnv {
 mod tests {
     use std::env;
     use super::BuildEnv;
+
     fn clear(trip: &str, var: &[&str]) {
         for v in var {
             env::remove_var(&format!("HOST_{}", v));
@@ -160,7 +161,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn most_general() {
         let t = "this-is-a-target";
         let cc = "a-cc-value";
@@ -172,7 +172,6 @@ mod tests {
         assert_eq!(b.var_str("CC").unwrap(), cc);
     }
 
-    #[test]
     fn exact_target() {
         let t = "this-is-a-target";
         let cc = "a-cc-value";
@@ -187,7 +186,6 @@ mod tests {
         assert_eq!(b.var_str("CC").unwrap(), cc);
     }
 
-    #[test]
     fn v_host() {
         let t = "this-is-a-target";
         let cc = "a-cc-value";
@@ -201,7 +199,6 @@ mod tests {
         assert_eq!(b.var_str("CC").unwrap(), cc);
     }
 
-    #[test]
     fn v_target() {
         let t = "this-is-a-target";
         let t2 = "some-target";
@@ -217,5 +214,19 @@ mod tests {
         let b = BuildEnv::new_cross(t.to_owned(), t2.to_owned());
 
         assert_eq!(b.var_str("CC").unwrap(), cc);
+    }
+
+    /* tests are only run in seperate threads, and seperate threads share environment between them.
+     * This causes our tests to fail when run concurrently.
+     *
+     * Workaround this for now by explicitly running them sequentially. Correct fix is probably to
+     * provide a "virtual" environment of sorts.
+     */
+    #[test]
+    fn all() {
+        most_general();
+        exact_target();
+        v_host();
+        v_target();
     }
 }
