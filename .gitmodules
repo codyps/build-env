@@ -1,3 +1,0 @@
-[submodule "rust-ci-helper"]
-	path = ci
-	url = https://github.com/jmesmon/rust-ci-helper
