@@ -1,15 +1,15 @@
-use std::env;
-use std::ffi::{OsStr,OsString};
 use std::borrow::ToOwned;
-use std::{error,fmt,any};
 use std::collections::BTreeSet;
+use std::env;
+use std::ffi::{OsStr, OsString};
+use std::{any, error, fmt};
 
 /**
  * Allow retrieval of values pretaining to a `build` process that may be related to the `target`
  * and/or `host` triple.
  *
  */
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct BuildEnv {
     /*
      * restricted to String due to our use of String::replace
@@ -22,23 +22,27 @@ pub struct BuildEnv {
 }
 
 /// If variable retrieval fails, it will be for one of these reasons
-#[derive(Debug,Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum VarErrorKind {
     NotString(OsString),
 }
 
 /// Describes a variable retrieval failure
-#[derive(Debug,Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct VarError<K: AsRef<OsStr>> {
     key: K,
-    kind: VarErrorKind
+    kind: VarErrorKind,
 }
 
 impl<K: AsRef<OsStr>> fmt::Display for VarError<K> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self.kind {
-            VarErrorKind::NotString(ref x) => write!(fmt, "Variable {:?} was found, but is not utf-8: {:?}",
-                                                     self.key.as_ref(), x)
+            VarErrorKind::NotString(ref x) => write!(
+                fmt,
+                "Variable {:?} was found, but is not utf-8: {:?}",
+                self.key.as_ref(),
+                x
+            ),
         }
     }
 }
@@ -121,19 +125,18 @@ impl BuildEnv {
 
     /// Query the environment for a value, trying the most specific first, before querying more
     /// general variables.
-    /// 
+    ///
     /// 1. `<var>_<target>` - for example, `CC_x86_64-unknown-linux-gnu`
     /// 2. `<var>_<target_with_underscores>` - for example, `CC_x86_64_unknown_linux_gnu`
     /// 3. `<build-kind>_<var>` - for example, `HOST_CC` or `TARGET_CFLAGS`
     /// 4. `<var>` - a plain `CC`, `AR` as above.
-    pub fn var<K: AsRef<OsStr>>(&mut self, var_base: K) -> Option<OsString>
-    {
+    pub fn var<K: AsRef<OsStr>>(&mut self, var_base: K) -> Option<OsString> {
         /* try the most specific item to the least specific item */
         let target = self.target();
         let host = self.host();
-        let kind = if host == target {"HOST"} else {"TARGET"};
+        let kind = if host == target { "HOST" } else { "TARGET" };
         let target_u = target.replace("-", "_");
-        let mut a : OsString = var_base.as_ref().to_owned();
+        let mut a: OsString = var_base.as_ref().to_owned();
         a.push("_");
 
         let mut b = a.clone();
@@ -141,10 +144,9 @@ impl BuildEnv {
         a.push(target);
         b.push(target_u);
 
-        let mut c : OsString = AsRef::<OsStr>::as_ref(kind).to_owned();
+        let mut c: OsString = AsRef::<OsStr>::as_ref(kind).to_owned();
         c.push("_");
         c.push(&var_base);
-
 
         let r = env::var_os(&a);
         self.used_env_vars.insert(a);
@@ -173,13 +175,17 @@ impl BuildEnv {
         None
     }
 
-    
     /// The same as [`var()`], but converts the return to an OsString and provides a useful error
     /// message
-    pub fn var_str<K: AsRef<OsStr> + fmt::Debug + any::Any>(&mut self, var_base: K) -> Option<Result<String, VarError<K>>>
-    {
+    pub fn var_str<K: AsRef<OsStr> + fmt::Debug + any::Any>(
+        &mut self,
+        var_base: K,
+    ) -> Option<Result<String, VarError<K>>> {
         match self.var(&var_base) {
-            Some(v) => Some(v.into_string().map_err(|o| VarError { key: var_base, kind: VarErrorKind::NotString(o)})),
+            Some(v) => Some(v.into_string().map_err(|o| VarError {
+                key: var_base,
+                kind: VarErrorKind::NotString(o),
+            })),
             None => None,
         }
     }
@@ -187,15 +193,15 @@ impl BuildEnv {
 
 #[cfg(test)]
 mod tests {
-    use std::env;
     use super::BuildEnv;
+    use std::env;
 
     fn clear(trip: &str, var: &[&str]) {
         for v in var {
             env::remove_var(&format!("HOST_{}", v));
             env::remove_var(&format!("TARGET_{}", v));
             env::remove_var(&format!("{}_{}", v, trip));
-            env::remove_var(&format!("{}_{}", v, trip.replace("-","_")));
+            env::remove_var(&format!("{}_{}", v, trip.replace("-", "_")));
             env::remove_var(v);
         }
     }
@@ -210,7 +216,15 @@ mod tests {
 
         assert_eq!(b.var_str("CC"), Some(Ok(cc.to_owned())));
         let used_env_vars: Vec<_> = b.used_env_vars().collect();
-        assert_eq!(&used_env_vars[..], ["CC", "CC_this-is-a-target", "CC_this_is_a_target", "HOST_CC"]);
+        assert_eq!(
+            &used_env_vars[..],
+            [
+                "CC",
+                "CC_this-is-a-target",
+                "CC_this_is_a_target",
+                "HOST_CC"
+            ]
+        );
         clear(t, &["CC"]);
     }
 
@@ -244,7 +258,10 @@ mod tests {
 
         assert_eq!(b.var_str("CC"), Some(Ok(cc.to_owned())));
         let used_env_vars: Vec<_> = b.used_env_vars().collect();
-        assert_eq!(&used_env_vars[..], ["CC_this-is-a-target", "CC_this_is_a_target"]);
+        assert_eq!(
+            &used_env_vars[..],
+            ["CC_this-is-a-target", "CC_this_is_a_target"]
+        );
         clear(t, &["CC"]);
     }
 
@@ -260,7 +277,10 @@ mod tests {
 
         assert_eq!(b.var_str("CC"), Some(Ok(cc.to_owned())));
         let used_env_vars: Vec<_> = b.used_env_vars().collect();
-        assert_eq!(&used_env_vars[..], ["CC_this-is-a-target", "CC_this_is_a_target", "HOST_CC"]);
+        assert_eq!(
+            &used_env_vars[..],
+            ["CC_this-is-a-target", "CC_this_is_a_target", "HOST_CC"]
+        );
         clear(t, &["CC"]);
     }
 
@@ -280,7 +300,10 @@ mod tests {
 
         assert_eq!(b.var_str("CC"), Some(Ok(cc.to_owned())));
         let used_env_vars: Vec<_> = b.used_env_vars().collect();
-        assert_eq!(&used_env_vars[..], ["CC_some-target", "CC_some_target", "TARGET_CC"]);
+        assert_eq!(
+            &used_env_vars[..],
+            ["CC_some-target", "CC_some_target", "TARGET_CC"]
+        );
         clear(t, &["CC"]);
     }
 
