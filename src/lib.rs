@@ -56,8 +56,8 @@ impl BuildEnv {
      * `host` via the environment variables `TARGET` and `HOST`.
      */
     pub fn from_env() -> Result<BuildEnv, env::VarError> {
-        let target = try!(env::var("TARGET"));
-        let host = try!(env::var("HOST"));
+        let target = env::var("TARGET")?;
+        let host = env::var("HOST")?;
 
         Ok(BuildEnv {
             target: target,
