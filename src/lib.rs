@@ -123,6 +123,20 @@ impl BuildEnv {
         }
     }
 
+    pub fn mark_used(&mut self, var: OsString) {
+        println!(
+            "cargo:rerun-if-env-changed={}",
+            var.to_str().expect("tried to examine non-utf-8 variable")
+        );
+        self.used_env_vars.insert(var);
+    }
+
+    fn env_one(&mut self, var: OsString) -> Option<OsString> {
+        let v = env::var_os(&var);
+        self.mark_used(var);
+        v
+    }
+
     /// Query the environment for a value, trying the most specific first, before querying more
     /// general variables.
     ///
@@ -148,31 +162,10 @@ impl BuildEnv {
         c.push("_");
         c.push(&var_base);
 
-        let r = env::var_os(&a);
-        self.used_env_vars.insert(a);
-        if r.is_some() {
-            return r;
-        }
-
-        let r = env::var_os(&b);
-        self.used_env_vars.insert(b);
-        if r.is_some() {
-            return r;
-        }
-
-        let r = env::var_os(&c);
-        self.used_env_vars.insert(c);
-        if r.is_some() {
-            return r;
-        }
-
-        let r = env::var_os(var_base.as_ref());
-        self.used_env_vars.insert(var_base.as_ref().to_owned());
-        if r.is_some() {
-            return r;
-        }
-
-        None
+        self.env_one(a)
+            .or_else(|| self.env_one(b))
+            .or_else(|| self.env_one(c))
+            .or_else(|| self.env_one(var_base.as_ref().to_owned()))
     }
 
     /// The same as [`var()`], but converts the return to an OsString and provides a useful error
