@@ -49,7 +49,7 @@ impl<K: AsRef<OsStr>> fmt::Display for VarError<K> {
                 "Variable {:?} is required, but retrival failed: {}",
                 self.key.as_ref(),
                 x
-            )
+            ),
         }
     }
 }
@@ -64,11 +64,10 @@ impl<K: AsRef<OsStr> + fmt::Debug + any::Any> error::Error for VarError<K> {
 }
 
 fn required_env_var(key: &str) -> Result<String, VarError<String>> {
-    env::var(key)
-        .map_err(|e| VarError {
-            key: key.to_owned(),
-            kind: VarErrorKind::RequiredEnvMissing(e)
-        })
+    env::var(key).map_err(|e| VarError {
+        key: key.to_owned(),
+        kind: VarErrorKind::RequiredEnvMissing(e),
+    })
 }
 
 impl BuildEnv {
