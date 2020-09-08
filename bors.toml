@@ -1,6 +1,8 @@
 status = [
 	"ci",
-	"ci-merge",
+	"ci-merge (stable)",
+	"ci-merge (nightly)",
+	"ci-merge (1.38.0)",
 ]
 cut_body_after = "---"
 delete_merged_branches = true
