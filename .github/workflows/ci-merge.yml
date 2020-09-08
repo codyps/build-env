@@ -1,0 +1,36 @@
+name: Continuous integration Full
+on:
+  push:
+    branches:
+      - trying
+      - staging
+
+jobs:
+  ci-merge:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          # beta is run as part of `ci.yml`
+          - nightly
+          - 1.38.0  # MSRV
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all --verbose --all-features
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all --verbose --all-features
