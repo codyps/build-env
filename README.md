@@ -3,7 +3,7 @@
 Get information about the build from environment variables
 
 ```
-let mut be = build_env::BuildEnv::from_env();
+let mut be = build_env::BuildEnv::from_env().unwrap();
 let _: Option<OsString> = be.var_os("CC");
 ```
 
