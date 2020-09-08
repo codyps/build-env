@@ -22,13 +22,14 @@ pub struct BuildEnv {
 }
 
 /// If variable retrieval fails, it will be for one of these reasons
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VarErrorKind {
     NotString(OsString),
+    RequiredEnvMissing(env::VarError),
 }
 
 /// Describes a variable retrieval failure
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VarError<K: AsRef<OsStr>> {
     key: K,
     kind: VarErrorKind,
@@ -43,6 +44,12 @@ impl<K: AsRef<OsStr>> fmt::Display for VarError<K> {
                 self.key.as_ref(),
                 x
             ),
+            VarErrorKind::RequiredEnvMissing(ref x) => write!(
+                fmt,
+                "Variable {:?} is required, but retrival failed: {}",
+                self.key.as_ref(),
+                x
+            )
         }
     }
 }
@@ -51,8 +58,17 @@ impl<K: AsRef<OsStr> + fmt::Debug + any::Any> error::Error for VarError<K> {
     fn description(&self) -> &str {
         match self.kind {
             VarErrorKind::NotString(_) => "found but not utf-8",
+            VarErrorKind::RequiredEnvMissing(_) => "other required env var missing",
         }
     }
+}
+
+fn required_env_var(key: &str) -> Result<String, VarError<String>> {
+    env::var(key)
+        .map_err(|e| VarError {
+            key: key.to_owned(),
+            kind: VarErrorKind::RequiredEnvMissing(e)
+        })
 }
 
 impl BuildEnv {
@@ -60,11 +76,11 @@ impl BuildEnv {
      * Use environment variables (such as those set by cargo) to determine values for `target` and
      * `host` via the environment variables `TARGET` and `HOST`.
      */
-    pub fn from_env() -> Result<BuildEnv, env::VarError> {
+    pub fn from_env() -> Result<BuildEnv, VarError<String>> {
         // NOTE: we don't consider these env vars "used" because cargo already will call build
         // scripts again if they change
-        let target = env::var("TARGET")?;
-        let host = env::var("HOST")?;
+        let target = required_env_var("TARGET")?;
+        let host = required_env_var("HOST")?;
 
         Ok(BuildEnv {
             target,
