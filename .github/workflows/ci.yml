@@ -33,14 +33,14 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --all-targets --all-features -- -D warnings
+          args: --all --all-targets --all-features -- -D warnings
 
       - uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace --all-targets --all-features --verbose
+          args: --all --all-targets --all-features --verbose
 
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --workspace --all-targets --all-features --verbose
+          args: --all --all-targets --all-features --verbose

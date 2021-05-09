@@ -30,9 +30,9 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace --all-targets --all-features --verbose
+          args: --all --all-targets --all-features --verbose
 
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --workspace --all-targets --all-features --verbose
+          args: --all --all-targets --all-features --verbose
