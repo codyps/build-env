@@ -1,4 +1,6 @@
-name: Continuous integration Full
+# basically, ci but on a matrix.
+# only built if requested (via try) or for merges
+name: ci for merge
 on:
   push:
     branches:
@@ -28,9 +30,9 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --all --verbose --all-features
+          args: --all --all-targets --all-features --verbose
 
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all --verbose --all-features
+          args: --all --all-targets --all-features --verbose

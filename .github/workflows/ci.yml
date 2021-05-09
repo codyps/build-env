@@ -1,9 +1,12 @@
+name: ci
+
 on:
   push:
-    branches-ignore:
-      - '**.tmp'
-
-name: ci
+    branches:
+      - trying
+      - staging
+  pull_request:
+    types: [ opened, synchronize, edited ]
 
 jobs:
   ci:
@@ -19,22 +22,25 @@ jobs:
           override: true
           components: rustfmt, clippy
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --all --verbose --all-features
-
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all --verbose --all-features
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v1
 
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
 
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all --all-targets --all-features -- -D warnings
+
       - uses: actions-rs/cargo@v1
         with:
-          command: clippy
-          args: -- -D warnings
+          command: build
+          args: --all --all-targets --all-features --verbose
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all --all-targets --all-features --verbose
