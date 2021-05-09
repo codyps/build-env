@@ -189,10 +189,12 @@ impl BuildEnv {
         &mut self,
         var_base: K,
     ) -> Option<Result<String, VarError<K>>> {
-        self.var(&var_base).map(|v| v.into_string().map_err(|o| VarError {
+        self.var(&var_base).map(|v| {
+            v.into_string().map_err(|o| VarError {
                 key: var_base,
                 kind: VarErrorKind::NotString(o),
-            }))
+            })
+        })
     }
 }
 
