@@ -5,7 +5,7 @@ use std::ffi::{OsStr, OsString};
 use std::{any, error, fmt};
 
 /**
- * Allow retrieval of values pretaining to a `build` process that may be related to the `target`
+ * Allow retrieval of values pertaining to a `build` process that may be related to the `target`
  * and/or `host` triple.
  *
  */
@@ -46,7 +46,7 @@ impl<K: AsRef<OsStr>> fmt::Display for VarError<K> {
             ),
             VarErrorKind::RequiredEnvMissing(ref x) => write!(
                 fmt,
-                "Variable {:?} is required, but retrival failed: {}",
+                "Variable {:?} is required, but retrieval failed: {}",
                 self.key.as_ref(),
                 x
             ),
@@ -314,7 +314,7 @@ mod tests {
         clear(t, &["CC"]);
     }
 
-    /* tests are only run in seperate threads, and seperate threads share environment between them.
+    /* tests are only run in separate threads, and separate threads share environment between them.
      * This causes our tests to fail when run concurrently.
      *
      * Workaround this for now by explicitly running them sequentially. Correct fix is probably to
