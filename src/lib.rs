@@ -1,3 +1,12 @@
+#![warn(
+    rust_2018_compatibility,
+    rust_2018_idioms,
+    nonstandard_style,
+    future_incompatible,
+    unused,
+    clippy::all
+)]
+
 use std::borrow::ToOwned;
 use std::collections::BTreeSet;
 use std::env;
@@ -36,7 +45,7 @@ pub struct VarError<K: AsRef<OsStr>> {
 }
 
 impl<K: AsRef<OsStr>> fmt::Display for VarError<K> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
             VarErrorKind::NotString(ref x) => write!(
                 fmt,
